@@ -34,10 +34,13 @@ jobs:
         shell: cmd
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-      - name: Generate app key
-        run: php artisan key:generate --force
+      - name: Bootstrap Laravel
+        run: |
+          php artisan package:discover --ansi
+          php artisan key:generate --force
+        shell: cmd
 
       - name: Install NPM dependencies
         run: npm install
@@ -83,10 +86,12 @@ jobs:
           mkdir -p bootstrap/cache
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-      - name: Generate app key
-        run: php artisan key:generate --force
+      - name: Bootstrap Laravel
+        run: |
+          php artisan package:discover --ansi
+          php artisan key:generate --force
 
       - name: Install NPM dependencies
         run: npm install
