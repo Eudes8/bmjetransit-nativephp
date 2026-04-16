@@ -8,11 +8,15 @@ use Illuminate\Http\Request;
 
 class TrackingController extends Controller
 {
-    public function show(string $numero)
+    public function show(?string $numero = null)
     {
+        if (!$numero) {
+            return view('tracking.show', ['livraison' => null]);
+        }
+
         $livraison = Livraison::with(['commande.client', 'livreur.user', 'suivis'])
             ->where('numero_tracking', $numero)
-            ->firstOrFail();
+            ->first();
 
         return view('tracking.show', compact('livraison'));
     }
