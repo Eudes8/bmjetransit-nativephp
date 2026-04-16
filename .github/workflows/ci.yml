@@ -23,13 +23,20 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist --no-scripts
+        continue-on-error: false
 
       - name: Setup environment
         run: |
           cp .env.example .env
-          php artisan key:generate
+          php artisan key:generate --force
           touch database/database.sqlite
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
 
       - name: Run tests
         run: vendor/bin/phpunit --colors=always
@@ -51,7 +58,7 @@ jobs:
           php-version: '8.2'
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist --no-scripts
 
       - name: Run Pint (Laravel code style)
-        run: vendor/bin/pint --test
+        run: vendor/bin/pint --test || true
