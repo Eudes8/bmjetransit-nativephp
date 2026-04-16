@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\FinanceController as AdminFinance;
 use App\Http\Controllers\Admin\CategorieController as AdminCategorie;
 use App\Http\Controllers\Client\CatalogueController;
 use App\Http\Controllers\Client\CommandeController as ClientCommande;
+use App\Http\Controllers\Client\PanierController;
 use App\Http\Controllers\Client\TrackingController;
 use App\Http\Controllers\Entreprise\DashboardController as EntrepriseDashboard;
 use App\Http\Controllers\Entreprise\ProduitController;
@@ -54,16 +55,28 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/deconnexion', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
+// -- Panier --
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/panier', [PanierController::class, 'index'])->name('panier');
+    Route::post('/panier/{produit}', [PanierController::class, 'ajouter'])->name('panier.ajouter');
+    Route::patch('/panier/{produit}', [PanierController::class, 'modifier'])->name('panier.modifier');
+    Route::delete('/panier/{produit}', [PanierController::class, 'supprimer'])->name('panier.supprimer');
+    Route::delete('/panier', [PanierController::class, 'vider'])->name('panier.vider');
+    Route::get('/commander', [PanierController::class, 'checkout'])->name('checkout');
+});
+
 // -- Espace Client --
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/mes-commandes', [ClientCommande::class, 'index'])->name('client.commandes');
-    Route::post('/commander', [ClientCommande::class, 'store'])->name('client.commandes.store');
+    Route::post('/commander', [ClientCommande::class, 'store'])->name('commandes.store');
     Route::get('/mes-commandes/{commande}', [ClientCommande::class, 'show'])->name('client.commandes.show');
     Route::post('/mes-commandes/{commande}/annuler', [ClientCommande::class, 'annuler'])->name('client.commandes.annuler');
     Route::get('/mon-profil', function () {
         return view('client.profil');
     })->name('client.profil');
+    Route::put('/mon-profil', [ClientCommande::class, 'updateProfil'])->name('client.profil.update');
 });
 
 // -- Admin BMJE --
