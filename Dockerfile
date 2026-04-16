@@ -26,9 +26,12 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interactio
 COPY . .
 RUN composer dump-autoload --optimize --no-scripts
 
+# --- Fichier .env (vide, les vars viennent de Render) ---
+RUN touch .env
+
 # --- Storage & cache ---
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache .env
 
 # --- Script de demarrage ---
 COPY docker-start.sh /usr/local/bin/docker-start.sh
