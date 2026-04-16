@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 |
 | API REST pour l'app Android (clients, entreprises, livreurs)
 | Authentification via Laravel Sanctum (Bearer token)
+| Prefix auto : /api/
 |
 */
 
@@ -51,21 +52,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // -- Client --
     Route::prefix('client')->group(function () {
-        // Panier
         Route::get('/panier', [ClientController::class, 'panier']);
         Route::post('/panier/{produit}', [ClientController::class, 'ajouterPanier']);
         Route::patch('/panier/{produit}', [ClientController::class, 'modifierPanier']);
         Route::delete('/panier/{produit}', [ClientController::class, 'supprimerPanier']);
         Route::delete('/panier', [ClientController::class, 'viderPanier']);
 
-        // Commandes
         Route::get('/commandes', [ClientController::class, 'commandes']);
         Route::post('/commandes', [ClientController::class, 'commander']);
         Route::get('/commandes/{commande}', [ClientController::class, 'commandeDetail']);
         Route::post('/commandes/{commande}/annuler', [ClientController::class, 'annulerCommande']);
         Route::post('/commandes/{commande}/avis', [ClientController::class, 'donnerAvis']);
 
-        // Checkout
         Route::post('/checkout/frais', [ClientController::class, 'calculerFrais']);
     });
 
@@ -73,19 +71,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:entreprise')->prefix('entreprise')->group(function () {
         Route::get('/dashboard', [EntrepriseController::class, 'dashboard']);
 
-        // Produits
         Route::get('/produits', [EntrepriseController::class, 'produits']);
         Route::post('/produits', [EntrepriseController::class, 'creerProduit']);
         Route::put('/produits/{produit}', [EntrepriseController::class, 'modifierProduit']);
         Route::delete('/produits/{produit}', [EntrepriseController::class, 'supprimerProduit']);
 
-        // Commandes
         Route::get('/commandes', [EntrepriseController::class, 'commandes']);
         Route::get('/commandes/{commande}', [EntrepriseController::class, 'commandeDetail']);
         Route::post('/commandes/{commande}/confirmer', [EntrepriseController::class, 'confirmerCommande']);
         Route::post('/commandes/{commande}/prete', [EntrepriseController::class, 'marquerPrete']);
 
-        // Finances
         Route::get('/finances', [EntrepriseController::class, 'finances']);
         Route::post('/versement', [EntrepriseController::class, 'demanderVersement']);
     });

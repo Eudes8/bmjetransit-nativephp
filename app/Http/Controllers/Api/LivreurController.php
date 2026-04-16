@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Livraison;
 use App\Models\SuiviLivraison;
-use App\Notifications\CommandeLivree;
 use Illuminate\Http\Request;
 
 class LivreurController extends Controller
@@ -23,9 +22,10 @@ class LivreurController extends Controller
             'livreur' => $l,
             'stats' => [
                 'livraisons_aujourdhui' => $l->livraisons()->whereDate('created_at', today())->count(),
-                'en_cours' => $l->livraisons()->whereIn('statut', ['assignee', 'recuperee', 'en_route'])->count(),
+                'en_cours' => $l->livraisons()->whereIn('statut', ['assignee', 'enlevee', 'en_route'])->count(),
                 'total_livrees' => $l->livraisons()->where('statut', 'livree')->count(),
-                'disponible' => $l->est_disponible,
+                'disponible' => $l->disponible,
+                'nombre_courses' => $l->nombre_courses,
             ],
         ]);
     }
@@ -34,7 +34,7 @@ class LivreurController extends Controller
     {
         $livraisons = $this->livreur($request)
             ->livraisons()
-            ->with(['commande.user', 'commande.produits'])
+            ->with(['commande.client'])
             ->latest()
             ->paginate(15);
 
@@ -47,7 +47,7 @@ class LivreurController extends Controller
             return response()->json(['message' => 'Non autorise.'], 403);
         }
 
-        $livraison->load(['commande.user', 'commande.commandeProduits.produit', 'suivis']);
+        $livraison->load(['commande.client', 'commande.commandeProduits.produit', 'suivis']);
 
         return response()->json($livraison);
     }
@@ -58,52 +58,59 @@ class LivreurController extends Controller
             return response()->json(['message' => 'Action impossible.'], 422);
         }
 
-        $livraison->update(['statut' => 'acceptee']);
-        $this->ajouterSuivi($livraison, 'Livraison acceptee par le livreur.');
+        $this->livreur($request)->update(['en_course' => true]);
+        $this->ajouterSuivi($livraison, 'assignee', 'Livraison acceptee par le livreur.');
 
         return response()->json(['message' => 'Livraison acceptee.']);
     }
 
     public function recuperee(Request $request, Livraison $livraison)
     {
-        if ($livraison->livreur_id !== $this->livreur($request)->id || !in_array($livraison->statut, ['acceptee', 'assignee'])) {
+        if ($livraison->livreur_id !== $this->livreur($request)->id || $livraison->statut !== 'assignee') {
             return response()->json(['message' => 'Action impossible.'], 422);
         }
 
-        $livraison->update(['statut' => 'recuperee']);
-        $livraison->commande->update(['statut' => 'en_livraison']);
-        $this->ajouterSuivi($livraison, 'Colis recupere chez le vendeur.');
+        $livraison->update([
+            'statut' => 'enlevee',
+            'date_enlevement' => now(),
+        ]);
+        $livraison->commande->update(['statut' => 'enlevee']);
+        $this->ajouterSuivi($livraison, 'enlevee', 'Colis enleve chez le vendeur.');
 
-        return response()->json(['message' => 'Colis recupere.']);
+        return response()->json(['message' => 'Colis enleve.']);
     }
 
     public function enRoute(Request $request, Livraison $livraison)
     {
-        if ($livraison->livreur_id !== $this->livreur($request)->id || $livraison->statut !== 'recuperee') {
+        if ($livraison->livreur_id !== $this->livreur($request)->id || $livraison->statut !== 'enlevee') {
             return response()->json(['message' => 'Action impossible.'], 422);
         }
 
         $livraison->update(['statut' => 'en_route']);
-        $this->ajouterSuivi($livraison, 'En route vers le client.');
+        $livraison->commande->update(['statut' => 'en_livraison']);
+        $this->ajouterSuivi($livraison, 'en_route', 'En route vers le client.');
 
         return response()->json(['message' => 'En route.']);
     }
 
     public function livree(Request $request, Livraison $livraison)
     {
-        if ($livraison->livreur_id !== $this->livreur($request)->id || !in_array($livraison->statut, ['en_route', 'recuperee'])) {
+        if ($livraison->livreur_id !== $this->livreur($request)->id || !in_array($livraison->statut, ['en_route', 'enlevee'])) {
             return response()->json(['message' => 'Action impossible.'], 422);
         }
 
         $livraison->update([
             'statut' => 'livree',
-            'livree_a' => now(),
+            'date_livraison_reelle' => now(),
         ]);
 
         $livraison->commande->update(['statut' => 'livree']);
-        $this->ajouterSuivi($livraison, 'Colis livre avec succes.');
 
-        $livraison->commande->user->notify(new CommandeLivree($livraison->commande));
+        $l = $this->livreur($request);
+        $l->increment('nombre_courses');
+        $l->update(['en_course' => false]);
+
+        $this->ajouterSuivi($livraison, 'livree', 'Colis livre avec succes.');
 
         return response()->json(['message' => 'Livraison terminee.']);
     }
@@ -111,11 +118,11 @@ class LivreurController extends Controller
     public function toggleDisponibilite(Request $request)
     {
         $l = $this->livreur($request);
-        $l->update(['est_disponible' => !$l->est_disponible]);
+        $l->update(['disponible' => !$l->disponible]);
 
         return response()->json([
-            'message' => $l->est_disponible ? 'Vous etes disponible.' : 'Vous etes indisponible.',
-            'disponible' => $l->est_disponible,
+            'message' => $l->disponible ? 'Vous etes disponible.' : 'Vous etes indisponible.',
+            'disponible' => $l->disponible,
         ]);
     }
 
@@ -134,12 +141,12 @@ class LivreurController extends Controller
         return response()->json(['message' => 'Position mise a jour.']);
     }
 
-    protected function ajouterSuivi(Livraison $livraison, string $message): void
+    protected function ajouterSuivi(Livraison $livraison, string $statut, string $description): void
     {
         SuiviLivraison::create([
             'livraison_id' => $livraison->id,
-            'statut' => $livraison->statut,
-            'message' => $message,
+            'statut' => $statut,
+            'description' => $description,
             'horodatage' => now(),
         ]);
     }

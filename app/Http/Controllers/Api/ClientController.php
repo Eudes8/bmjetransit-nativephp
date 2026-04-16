@@ -3,14 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Avis;
 use App\Models\Commande;
 use App\Models\CommandeProduit;
 use App\Models\Produit;
-use App\Notifications\NouvelleCommande;
 use App\Services\CommissionService;
 use App\Services\LivraisonService;
-use App\Services\PaiementService;
 use App\Services\PanierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -21,7 +18,6 @@ class ClientController extends Controller
         protected PanierService $panier,
         protected LivraisonService $livraison,
         protected CommissionService $commission,
-        protected PaiementService $paiement,
     ) {}
 
     // -- Panier --
@@ -86,11 +82,11 @@ class ClientController extends Controller
     public function commander(Request $request)
     {
         $data = $request->validate([
+            'entreprise_id' => 'required|exists:entreprises,id',
             'adresse_livraison' => 'required|string|max:255',
             'ville_livraison' => 'required|string|max:100',
             'telephone_livraison' => 'required|string|max:20',
             'mode_paiement' => 'required|in:orange_money,mtn_momo,wave,especes',
-            'numero_paiement' => 'required_unless:mode_paiement,especes|nullable|string|max:20',
             'notes_client' => 'nullable|string|max:500',
         ]);
 
@@ -99,33 +95,34 @@ class ClientController extends Controller
         }
 
         $frais = $this->livraison->calculerFrais(5, $this->panier->contientFragile());
-        $total = $this->panier->total() + $frais;
+        $montant_produits = $this->panier->total();
+        $calc = $this->commission->calculer($montant_produits);
 
         $commande = Commande::create([
-            'user_id' => $request->user()->id,
-            'numero' => 'CMD-' . strtoupper(Str::random(8)),
-            'montant_produits' => $this->panier->total(),
+            'numero' => 'BMJ-' . date('Y') . '-' . strtoupper(Str::random(6)),
+            'client_id' => $request->user()->id,
+            'entreprise_id' => $data['entreprise_id'],
+            'montant_produits' => $montant_produits,
             'frais_livraison' => $frais,
-            'montant_total' => $total,
+            'montant_total' => $montant_produits + $frais,
+            'commission_bmje' => $calc['commission'],
+            'montant_entreprise' => $calc['montant_entreprise'],
             'adresse_livraison' => $data['adresse_livraison'],
             'ville_livraison' => $data['ville_livraison'],
             'telephone_livraison' => $data['telephone_livraison'],
             'mode_paiement' => $data['mode_paiement'],
             'notes_client' => $data['notes_client'] ?? null,
             'statut' => 'en_attente',
+            'paiement_statut' => 'en_attente',
         ]);
 
         foreach ($this->panier->contenu() as $item) {
-            $calc = $this->commission->calculer($item['prix'] * $item['quantite']);
             CommandeProduit::create([
                 'commande_id' => $commande->id,
                 'produit_id' => $item['produit_id'],
-                'entreprise_id' => $item['entreprise_id'],
                 'quantite' => $item['quantite'],
                 'prix_unitaire' => $item['prix'],
                 'montant' => $item['prix'] * $item['quantite'],
-                'commission' => $calc['commission'],
-                'montant_entreprise' => $calc['montant_entreprise'],
             ]);
         }
 
@@ -133,14 +130,13 @@ class ClientController extends Controller
 
         return response()->json([
             'message' => 'Commande passee avec succes.',
-            'commande' => $commande->load('produits'),
+            'commande' => $commande,
         ], 201);
     }
 
     public function commandes(Request $request)
     {
-        $commandes = Commande::where('user_id', $request->user()->id)
-            ->with('produits')
+        $commandes = Commande::where('client_id', $request->user()->id)
             ->latest()
             ->paginate(15);
 
@@ -149,18 +145,18 @@ class ClientController extends Controller
 
     public function commandeDetail(Commande $commande, Request $request)
     {
-        if ($commande->user_id !== $request->user()->id) {
+        if ($commande->client_id !== $request->user()->id) {
             return response()->json(['message' => 'Non autorise.'], 403);
         }
 
-        $commande->load(['produits.produit', 'livraison.suivis']);
+        $commande->load(['commandeProduits.produit', 'livraison.suivis']);
 
         return response()->json($commande);
     }
 
     public function annulerCommande(Commande $commande, Request $request)
     {
-        if ($commande->user_id !== $request->user()->id) {
+        if ($commande->client_id !== $request->user()->id) {
             return response()->json(['message' => 'Non autorise.'], 403);
         }
 
@@ -175,7 +171,7 @@ class ClientController extends Controller
 
     public function donnerAvis(Request $request, Commande $commande)
     {
-        if ($commande->user_id !== $request->user()->id || $commande->statut !== 'livree') {
+        if ($commande->client_id !== $request->user()->id || $commande->statut !== 'livree') {
             return response()->json(['message' => 'Non autorise.'], 403);
         }
 
@@ -184,13 +180,8 @@ class ClientController extends Controller
             'commentaire' => 'nullable|string|max:500',
         ]);
 
-        $avis = Avis::create([
-            'user_id' => $request->user()->id,
-            'commande_id' => $commande->id,
-            'note' => $data['note'],
-            'commentaire' => $data['commentaire'] ?? null,
-        ]);
+        $commande->update(['note_client' => $data['note']]);
 
-        return response()->json(['message' => 'Merci pour votre avis.', 'avis' => $avis], 201);
+        return response()->json(['message' => 'Merci pour votre avis.'], 201);
     }
 }

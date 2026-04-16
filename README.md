@@ -1,110 +1,116 @@
-# 🚚 BMJeTransit — Marketplace + Livraison
+# BMJeTransit - Marketplace avec livraison integree
 
-**Plateforme marketplace avec service de livraison intégré pour la Côte d'Ivoire.**
+Application desktop (NativePHP/Electron) + API REST pour mobile.
 
-Les entreprises publient leurs produits et services. Les clients commandent et paient. BMJE Transit gère toute la logistique de livraison avec ses propres livreurs.
+## Architecture
 
-## 🏗️ Architecture
+- **Admin BMJE** : App desktop NativePHP (PC) - gestion de la plateforme
+- **Clients / Entreprises / Livreurs** : App mobile Android via API REST
+- **Backend** : Laravel 11 + SQLite (dev) / MySQL (production)
+- **Auth API** : Laravel Sanctum (Bearer token)
 
-- **Backend** : Laravel 11 + PHP 8.3
-- **Desktop Admin** : NativePhP (Electron)
-- **Frontend** : Blade + Livewire
-- **Base de données** : SQLite (dev) / MySQL (prod)
-- **Paiements** : Orange Money, MTN MoMo, Wave, Espèces
+## Installation locale
 
-## 💰 Business Model
+### Pre-requis
 
-```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│  ENTREPRISE  │      │  BMJE TRANSIT │      │    CLIENT    │
-│  (vendeur)   │◄────►│ (plateforme)  │◄────►│  (acheteur)  │
-│              │      │               │      │              │
-│ • Publie ses │      │ • Gère tout   │      │ • Achète     │
-│   produits   │      │ • Prend une   │      │ • Paie       │
-│ • Paie un    │      │   commission  │      │   produit +  │
-│   abonnement │      │ • Gère les    │      │   livraison  │
-│              │      │   livreurs    │      │              │
-└──────────────┘      └───────┬───────┘      └──────────────┘
-                              │
-                      ┌───────▼───────┐
-                      │   LIVREUR     │
-                      │  (employé     │
-                      │   BMJE)       │
-                      │ • Enlève chez │
-                      │   l'entreprise│
-                      │ • Livre au    │
-                      │   client      │
-                      └───────────────┘
-```
-
-## 📦 Installation
-
-### Prérequis
-- PHP 8.3+
+- PHP 8.2+
 - Composer
-- Node.js 22+
-- npm
+- Node.js 20+
+- NPM
 
-### 1. Cloner le projet
+### Etapes
+
 ```bash
+# 1. Cloner le projet
 git clone https://github.com/Eudes8/bmjetransit-nativephp.git
 cd bmjetransit-nativephp
-```
 
-### 2. Installer les dépendances PHP
-```bash
+# 2. Installer les dependances
 composer install
-```
+npm install
 
-### 3. Installer NativePhP
-```bash
-composer require nativephp/desktop
-php artisan native:install
-```
-
-### 4. Configurer l'environnement
-```bash
+# 3. Configurer l'environnement
 cp .env.example .env
 php artisan key:generate
-```
 
-### 5. Créer la base de données
-```bash
+# 4. Creer la base de donnees SQLite
 touch database/database.sqlite
-php artisan migrate
-php artisan db:seed
+php artisan migrate --seed
+
+# 5. Compiler les assets frontend
+npm run build
 ```
 
-### 6. Lancer l'application
+### Lancer en mode web (tester tous les roles)
+
 ```bash
-# En mode web (navigateur)
+# Terminal 1 : serveur Laravel
 php artisan serve
 
-# En mode desktop natif (Electron)
-php artisan native:run
+# Terminal 2 : Vite dev (hot reload CSS/JS)
+npm run dev
+
+# Ouvrir http://localhost:8000
 ```
 
-## 🗃️ Base de données (15 tables)
+### Lancer en mode desktop (NativePHP)
 
-| Groupe | Tables |
-|--------|--------|
-| Auth | `users` |
-| Entreprises | `entreprises`, `forfaits`, `abonnements` |
-| Catalogue | `categories`, `produits` |
-| Commandes | `commandes`, `commande_produits` |
-| Livraison | `livreurs`, `livraisons`, `suivi_livraisons` |
-| Finances | `transactions`, `portefeuilles_entreprises`, `versements` |
-| Social | `avis`, `notifications` |
+```bash
+php artisan native:serve
+```
 
-## 👥 Rôles utilisateurs
+## Comptes de test
 
-| Rôle | Description |
-|------|-------------|
-| 👑 Admin BMJE | Gère la plateforme, les tarifs, les livreurs |
-| 🏢 Entreprise | Publie produits, reçoit commandes, reçoit paiements |
-| 👤 Client | Achète, paie, suit sa livraison |
-| 🚴 Livreur | Employé BMJE, enlève et livre les commandes |
+| Role       | Email                    | Mot de passe |
+|------------|--------------------------|--------------|
+| Admin      | admin@bmjetransit.com    | password     |
+| Client     | client@test.com          | password     |
+| Entreprise | entreprise@test.com      | password     |
+| Entreprise | boutique@test.com        | password     |
+| Livreur    | livreur@test.com         | password     |
 
-## 📄 Licence
+## API REST
 
-Propriétaire — BMJE TRANSIT © 2026
+Base URL : `http://localhost:8000/api`
+
+### Endpoints publics
+
+| Methode | URL                        | Description               |
+|---------|----------------------------|---------------------------|
+| POST    | /api/auth/inscription      | Inscription client        |
+| POST    | /api/auth/connexion        | Connexion (retourne token)|
+| GET     | /api/catalogue             | Liste produits            |
+| GET     | /api/catalogue/{id}        | Detail produit            |
+| GET     | /api/categories            | Liste categories          |
+| GET     | /api/tracking/{numero}     | Suivi commande            |
+
+### Endpoints authentifies (Bearer token)
+
+Ajouter le header : `Authorization: Bearer {token}`
+
+**Client** : `/api/client/panier`, `/api/client/commandes`, etc.
+**Entreprise** : `/api/entreprise/dashboard`, `/api/entreprise/produits`, etc.
+**Livreur** : `/api/livreur/dashboard`, `/api/livreur/livraisons`, etc.
+
+## GitHub Actions
+
+- **CI Tests** : Tests PHPUnit + code style a chaque push
+- **Build Desktop** : Build .exe (Windows) + .AppImage (Linux) a chaque push sur main
+- **Release** : Creer un tag `v1.0.0` pour generer une release GitHub avec les fichiers telechargeables
+
+### Creer une release
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## Technologies
+
+- Laravel 11, NativePHP/Electron, Laravel Sanctum
+- Tailwind CSS, Vite, Font Awesome
+- SQLite (dev), MySQL (prod)
+
+## Licence
+
+Proprietary - BMJE Transit

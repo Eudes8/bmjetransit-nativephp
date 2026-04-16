@@ -22,19 +22,19 @@ class EntrepriseController extends Controller
         return response()->json([
             'entreprise' => $e,
             'stats' => [
-                'produits_actifs' => $e->produits()->where('est_actif', true)->count(),
-                'commandes_en_cours' => $e->commandes()->whereIn('statut', ['en_attente', 'confirmee', 'en_preparation'])->count(),
-                'commandes_ce_mois' => $e->commandes()->whereMonth('created_at', now()->month)->count(),
-                'ca_ce_mois' => $e->commandes()
+                'produits_actifs' => $e->produits()->where('statut', 'actif')->count(),
+                'commandes_en_cours' => Commande::where('entreprise_id', $e->id)
+                    ->whereIn('statut', ['en_attente', 'confirmee', 'en_preparation'])->count(),
+                'commandes_ce_mois' => Commande::where('entreprise_id', $e->id)
+                    ->whereMonth('created_at', now()->month)->count(),
+                'ca_ce_mois' => Commande::where('entreprise_id', $e->id)
                     ->whereMonth('created_at', now()->month)
                     ->where('statut', 'livree')
-                    ->sum('montant_produits'),
-                'solde' => $e->portefeuille?->solde ?? 0,
+                    ->sum('montant_entreprise'),
+                'solde' => $e->portefeuille?->solde_disponible ?? 0,
             ],
         ]);
     }
-
-    // -- Produits --
 
     public function produits(Request $request)
     {
@@ -61,7 +61,7 @@ class EntrepriseController extends Controller
         ]);
 
         $data['entreprise_id'] = $this->entreprise($request)->id;
-        $data['est_actif'] = true;
+        $data['statut'] = 'actif';
         $produit = Produit::create($data);
 
         return response()->json(['message' => 'Produit cree.', 'produit' => $produit], 201);
@@ -82,7 +82,7 @@ class EntrepriseController extends Controller
             'stock' => 'nullable|integer|min:0',
             'poids_kg' => 'nullable|numeric|min:0',
             'est_fragile' => 'nullable|boolean',
-            'est_actif' => 'nullable|boolean',
+            'statut' => 'nullable|in:actif,inactif,en_rupture',
         ]);
 
         $produit->update($data);
@@ -96,31 +96,34 @@ class EntrepriseController extends Controller
             return response()->json(['message' => 'Non autorise.'], 403);
         }
 
-        $produit->update(['est_actif' => false]);
+        $produit->update(['statut' => 'inactif']);
 
         return response()->json(['message' => 'Produit supprime.']);
     }
 
-    // -- Commandes --
-
     public function commandes(Request $request)
     {
-        $commandes = Commande::whereHas('commandeProduits', fn ($q) =>
-            $q->where('entreprise_id', $this->entreprise($request)->id)
-        )->with('user', 'produits')->latest()->paginate(15);
+        $commandes = Commande::where('entreprise_id', $this->entreprise($request)->id)
+            ->with('client')
+            ->latest()
+            ->paginate(15);
 
         return response()->json($commandes);
     }
 
     public function commandeDetail(Request $request, Commande $commande)
     {
-        $commande->load(['user', 'commandeProduits.produit', 'livraison']);
+        $commande->load(['client', 'commandeProduits.produit', 'livraison']);
 
         return response()->json($commande);
     }
 
     public function confirmerCommande(Request $request, Commande $commande)
     {
+        if ($commande->entreprise_id !== $this->entreprise($request)->id) {
+            return response()->json(['message' => 'Non autorise.'], 403);
+        }
+
         if ($commande->statut !== 'en_attente') {
             return response()->json(['message' => 'Action impossible.'], 422);
         }
@@ -132,40 +135,42 @@ class EntrepriseController extends Controller
 
     public function marquerPrete(Request $request, Commande $commande)
     {
-        if ($commande->statut !== 'confirmee') {
+        if ($commande->entreprise_id !== $this->entreprise($request)->id) {
+            return response()->json(['message' => 'Non autorise.'], 403);
+        }
+
+        if (!in_array($commande->statut, ['confirmee', 'en_preparation'])) {
             return response()->json(['message' => 'Action impossible.'], 422);
         }
 
-        $commande->update(['statut' => 'en_preparation']);
+        $commande->update(['statut' => 'prete']);
 
-        return response()->json(['message' => 'Commande prete pour la livraison.']);
+        return response()->json(['message' => 'Commande prete pour enlevement.']);
     }
-
-    // -- Finances --
 
     public function finances(Request $request)
     {
         $e = $this->entreprise($request);
 
         return response()->json([
-            'solde' => $e->portefeuille?->solde ?? 0,
+            'solde_disponible' => $e->portefeuille?->solde_disponible ?? 0,
+            'solde_en_attente' => $e->portefeuille?->solde_en_attente ?? 0,
             'total_gagne' => $e->portefeuille?->total_gagne ?? 0,
-            'total_verse' => $e->portefeuille?->total_verse ?? 0,
-            'versements' => $e->versements()->latest()->take(20)->get(),
-            'abonnement' => $e->abonnement_actif,
+            'total_retire' => $e->portefeuille?->total_retire ?? 0,
+            'versements' => Versement::where('entreprise_id', $e->id)->latest()->take(20)->get(),
         ]);
     }
 
     public function demanderVersement(Request $request)
     {
         $data = $request->validate([
-            'montant' => 'required|numeric|min:' . config('bmje.versement_min', 5000),
+            'montant' => 'required|numeric|min:' . config('bmje.versement.montant_min', 5000),
             'mode' => 'required|in:orange_money,mtn_momo,wave,virement',
             'numero_compte' => 'required|string|max:50',
         ]);
 
         $e = $this->entreprise($request);
-        $solde = $e->portefeuille?->solde ?? 0;
+        $solde = $e->portefeuille?->solde_disponible ?? 0;
 
         if ($data['montant'] > $solde) {
             return response()->json(['message' => 'Solde insuffisant.'], 422);
@@ -177,6 +182,7 @@ class EntrepriseController extends Controller
             'mode' => $data['mode'],
             'numero_compte' => $data['numero_compte'],
             'statut' => 'en_attente',
+            'date_demande' => now(),
         ]);
 
         return response()->json(['message' => 'Demande de versement soumise.', 'versement' => $versement], 201);

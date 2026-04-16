@@ -18,26 +18,25 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'telephone' => '+225' . fake()->numerify('##########'),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'client',
-            'ville' => fake()->randomElement(['Abidjan', 'Bouake', 'Yamoussoukro', 'San Pedro', 'Daloa']),
-            'adresse' => fake()->address(),
-            'est_actif' => true,
+            'type' => 'client',
+            'statut' => 'actif',
+            'email_verified_at' => now(),
             'remember_token' => Str::random(10),
         ];
     }
 
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => 'admin']);
+        return $this->state(fn (array $attributes) => ['type' => 'admin']);
     }
 
     public function entreprise(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => 'entreprise']);
+        return $this->state(fn (array $attributes) => ['type' => 'entreprise']);
     }
 
     public function livreur(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => 'livreur']);
+        return $this->state(fn (array $attributes) => ['type' => 'livreur']);
     }
 }

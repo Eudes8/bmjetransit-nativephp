@@ -1,0 +1,145 @@
+name: Build Desktop App
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath, gd
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Setup environment
+        run: |
+          copy .env.example .env
+          php artisan key:generate
+        shell: cmd
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Build NativePHP desktop app
+        run: php artisan native:build win
+        env:
+          NATIVEPHP_BUILDING: true
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BMJeTransit-Windows
+          path: dist/*.exe
+          if-no-files-found: warn
+
+  build-linux:
+    name: Build Linux (.AppImage)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath, gd
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Setup environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Build NativePHP desktop app
+        run: php artisan native:build linux
+        env:
+          NATIVEPHP_BUILDING: true
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BMJeTransit-Linux
+          path: dist/*.AppImage
+          if-no-files-found: warn
+
+  release:
+    name: Create Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BMJeTransit-Windows
+          path: dist/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BMJeTransit-Linux
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: BMJeTransit ${{ github.ref_name }}
+          body: |
+            ## BMJeTransit ${{ github.ref_name }}
+
+            ### Telechargements
+            - **Windows** : `BMJeTransit-Setup.exe`
+            - **Linux** : `BMJeTransit.AppImage`
+
+            ### Comptes de test
+            - Admin : `admin@bmjetransit.com` / `password`
+            - Client : `client@test.com` / `password`
+            - Entreprise : `entreprise@test.com` / `password`
+            - Livreur : `livreur@test.com` / `password`
+          files: dist/*
+          draft: false
+          prerelease: false

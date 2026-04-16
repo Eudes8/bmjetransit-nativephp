@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'nom', 'prenom', 'email', 'telephone',
@@ -26,7 +27,7 @@ class User extends Authenticatable
         ];
     }
 
-    // ── Relations ─────────────────────────────────────
+    // -- Relations --
 
     public function entreprise()
     {
@@ -43,12 +44,7 @@ class User extends Authenticatable
         return $this->hasMany(Commande::class, 'client_id');
     }
 
-    public function notifications()
-    {
-        return $this->hasMany(Notification::class);
-    }
-
-    // ── Helpers ───────────────────────────────────────
+    // -- Helpers --
 
     public function getNomCompletAttribute(): string
     {

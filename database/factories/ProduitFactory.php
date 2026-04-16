@@ -19,10 +19,11 @@ class ProduitFactory extends Factory
             'description' => fake()->paragraph(),
             'prix' => $prix,
             'prix_promo' => fake()->boolean(30) ? intval($prix * 0.8) : null,
+            'en_promo' => false,
             'stock' => fake()->numberBetween(0, 200),
             'poids_kg' => fake()->randomFloat(1, 0.1, 30),
             'est_fragile' => fake()->boolean(20),
-            'est_actif' => true,
+            'statut' => 'actif',
         ];
     }
 }

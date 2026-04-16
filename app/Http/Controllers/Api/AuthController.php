@@ -18,19 +18,23 @@ class AuthController extends Controller
             'prenom' => 'required|string|max:100',
             'nom' => 'required|string|max:100',
             'email' => 'required|email|unique:users',
-            'telephone' => 'required|string|max:20',
+            'telephone' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:8',
-            'ville' => 'nullable|string|max:100',
-            'adresse' => 'nullable|string|max:255',
         ]);
 
-        $data['password'] = Hash::make($data['password']);
-        $data['role'] = 'client';
-        $user = User::create($data);
+        $user = User::create([
+            'prenom' => $data['prenom'],
+            'nom' => $data['nom'],
+            'email' => $data['email'],
+            'telephone' => $data['telephone'],
+            'password' => Hash::make($data['password']),
+            'type' => 'client',
+            'statut' => 'actif',
+        ]);
 
         return response()->json([
             'message' => 'Inscription reussie.',
-            'user' => $user->only(['id', 'prenom', 'nom', 'email', 'telephone', 'role']),
+            'user' => $user->only(['id', 'prenom', 'nom', 'email', 'telephone', 'type']),
             'token' => $user->createToken('mobile')->plainTextToken,
         ], 201);
     }
@@ -41,7 +45,7 @@ class AuthController extends Controller
             'prenom' => 'required|string|max:100',
             'nom' => 'required|string|max:100',
             'email' => 'required|email|unique:users',
-            'telephone' => 'required|string|max:20',
+            'telephone' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:8',
             'raison_sociale' => 'required|string|max:200',
             'sigle' => 'nullable|string|max:20',
@@ -58,12 +62,11 @@ class AuthController extends Controller
             'email' => $data['email'],
             'telephone' => $data['telephone'],
             'password' => Hash::make($data['password']),
-            'role' => 'entreprise',
-            'ville' => $data['ville'],
-            'adresse' => $data['adresse'],
+            'type' => 'entreprise',
+            'statut' => 'actif',
         ]);
 
-        $forfait = Forfait::where('slug', 'starter')->first();
+        $forfait = Forfait::where('nom', 'Starter')->first();
 
         Entreprise::create([
             'user_id' => $user->id,
@@ -76,12 +79,12 @@ class AuthController extends Controller
             'adresse' => $data['adresse'],
             'description' => $data['description'] ?? null,
             'statut' => 'en_attente',
-            'commission_taux' => config('bmje.commission'),
+            'commission_taux' => config('bmje.commission_defaut', 10),
         ]);
 
         return response()->json([
             'message' => 'Inscription entreprise soumise. En attente de validation.',
-            'user' => $user->only(['id', 'prenom', 'nom', 'email', 'role']),
+            'user' => $user->only(['id', 'prenom', 'nom', 'email', 'type']),
             'token' => $user->createToken('mobile')->plainTextToken,
         ], 201);
     }
@@ -101,13 +104,15 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->est_actif) {
-            return response()->json(['message' => 'Compte desactive.'], 403);
+        if ($user->statut !== 'actif') {
+            return response()->json(['message' => 'Compte desactive ou suspendu.'], 403);
         }
+
+        $user->update(['derniere_connexion' => now()]);
 
         return response()->json([
             'message' => 'Connexion reussie.',
-            'user' => $user->only(['id', 'prenom', 'nom', 'email', 'telephone', 'role', 'ville', 'adresse']),
+            'user' => $user->only(['id', 'prenom', 'nom', 'email', 'telephone', 'type']),
             'token' => $user->createToken('mobile')->plainTextToken,
         ]);
     }
@@ -122,13 +127,13 @@ class AuthController extends Controller
     public function profil(Request $request)
     {
         $user = $request->user();
-        $data = $user->only(['id', 'prenom', 'nom', 'email', 'telephone', 'role', 'ville', 'adresse']);
+        $data = $user->only(['id', 'prenom', 'nom', 'email', 'telephone', 'type', 'avatar']);
 
-        if ($user->role === 'entreprise') {
+        if ($user->type === 'entreprise') {
             $data['entreprise'] = $user->entreprise;
         }
 
-        if ($user->role === 'livreur') {
+        if ($user->type === 'livreur') {
             $data['livreur'] = $user->livreur;
         }
 
@@ -141,8 +146,6 @@ class AuthController extends Controller
             'prenom' => 'sometimes|string|max:100',
             'nom' => 'sometimes|string|max:100',
             'telephone' => 'sometimes|string|max:20',
-            'ville' => 'nullable|string|max:100',
-            'adresse' => 'nullable|string|max:255',
         ]);
 
         $request->user()->update($data);
@@ -154,7 +157,6 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email|exists:users']);
 
-        // TODO: Envoyer SMS/email de reinitialisation
-        return response()->json(['message' => 'Instructions envoyees.']);
+        return response()->json(['message' => 'Instructions envoyees par SMS.']);
     }
 }

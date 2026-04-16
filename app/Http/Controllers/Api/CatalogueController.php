@@ -14,7 +14,7 @@ class CatalogueController extends Controller
     public function index(Request $request)
     {
         $query = Produit::with(['entreprise', 'categorie'])
-            ->where('est_actif', true)
+            ->where('statut', 'actif')
             ->whereHas('entreprise', fn ($q) => $q->where('statut', 'approuvee'));
 
         if ($request->filled('categorie')) {
@@ -37,7 +37,7 @@ class CatalogueController extends Controller
         $query = match ($tri) {
             'prix_asc' => $query->orderBy('prix', 'asc'),
             'prix_desc' => $query->orderBy('prix', 'desc'),
-            'populaire' => $query->withCount('commandeProduits')->orderByDesc('commande_produits_count'),
+            'populaire' => $query->orderByDesc('nombre_ventes'),
             default => $query->latest(),
         };
 
@@ -46,26 +46,27 @@ class CatalogueController extends Controller
 
     public function show(Produit $produit)
     {
-        $produit->load(['entreprise', 'categorie', 'avis.user']);
+        $produit->load(['entreprise', 'categorie']);
 
         return response()->json([
             'produit' => $produit,
-            'note_moyenne' => $produit->avis->avg('note'),
-            'nombre_avis' => $produit->avis->count(),
+            'note_moyenne' => $produit->note_moyenne,
+            'nombre_ventes' => $produit->nombre_ventes,
         ]);
     }
 
     public function entreprise(Entreprise $entreprise)
     {
-        $entreprise->load(['produits' => fn ($q) => $q->where('est_actif', true)->latest()]);
+        $entreprise->load(['produits' => fn ($q) => $q->where('statut', 'actif')->latest()]);
 
         return response()->json($entreprise);
     }
 
     public function categories()
     {
-        $categories = Categorie::withCount(['produits' => fn ($q) => $q->where('est_actif', true)])
-            ->orderBy('nom')
+        $categories = Categorie::where('actif', true)
+            ->withCount(['produits' => fn ($q) => $q->where('statut', 'actif')])
+            ->orderBy('ordre')
             ->get();
 
         return response()->json($categories);
@@ -74,7 +75,7 @@ class CatalogueController extends Controller
     public function tracking(string $numero)
     {
         $commande = Commande::where('numero', $numero)
-            ->with(['livraison.suivis', 'produits'])
+            ->with(['livraison.suivis'])
             ->first();
 
         if (!$commande) {
