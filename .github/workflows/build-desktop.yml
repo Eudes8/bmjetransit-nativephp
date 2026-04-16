@@ -30,6 +30,7 @@ jobs:
       - name: Setup environment
         run: |
           copy .env.example .env
+          if not exist bootstrap\cache mkdir bootstrap\cache
         shell: cmd
 
       - name: Install Composer dependencies
@@ -79,6 +80,7 @@ jobs:
       - name: Setup environment
         run: |
           cp .env.example .env
+          mkdir -p bootstrap/cache
 
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
@@ -136,12 +138,4 @@ jobs:
             ### Telechargements
             - **Windows** : `BMJeTransit-Setup.exe`
             - **Linux** : `BMJeTransit.AppImage`
-
-            ### Comptes de test
-            - Admin : `admin@bmjetransit.com` / `password`
-            - Client : `client@test.com` / `password`
-            - Entreprise : `entreprise@test.com` / `password`
-            - Livreur : `livreur@test.com` / `password`
           files: dist/*
-          draft: false
-          prerelease: false
