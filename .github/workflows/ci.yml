@@ -22,20 +22,20 @@ jobs:
           extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath
           coverage: none
 
-      - name: Setup environment file
-        run: cp .env.example .env
-
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist --no-scripts
 
-      - name: Generate app key
-        run: php artisan key:generate --force
+      - name: Generate autoload
+        run: composer dump-autoload
 
-      - name: Create SQLite database
-        run: touch database/database.sqlite
+      - name: Setup environment
+        run: |
+          cp .env.example .env
+          sed -i 's/APP_KEY=/APP_KEY=base64:dGVzdGtleWZvcmNpdGVzdGluZzEyMzQ1Njc4OTA=/' .env
+          touch database/database.sqlite
 
       - name: Run migrations
-        run: php artisan migrate --force
+        run: php artisan migrate --force --no-interaction
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
@@ -60,7 +60,7 @@ jobs:
           php-version: '8.2'
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist --no-scripts
 
       - name: Run Pint (Laravel code style)
         run: vendor/bin/pint --test || true
