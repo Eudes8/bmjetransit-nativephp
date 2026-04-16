@@ -60,25 +60,25 @@ class DatabaseSeeder extends Seeder
 
         // ── Catégories principales ────────────────────
         $categories = [
-            ['nom' => 'Alimentation & Boissons', 'icone' => '🍽️', 'ordre' => 1],
-            ['nom' => 'Électronique & High-Tech', 'icone' => '📱', 'ordre' => 2],
-            ['nom' => 'Mode & Vêtements', 'icone' => '👗', 'ordre' => 3],
-            ['nom' => 'Maison & Décoration', 'icone' => '🏠', 'ordre' => 4],
-            ['nom' => 'Santé & Beauté', 'icone' => '💊', 'ordre' => 5],
-            ['nom' => 'Matériaux & BTP', 'icone' => '🧱', 'ordre' => 6],
-            ['nom' => 'Bureau & Fournitures', 'icone' => '📎', 'ordre' => 7],
-            ['nom' => 'Agriculture', 'icone' => '🌾', 'ordre' => 8],
-            ['nom' => 'Services', 'icone' => '🔧', 'ordre' => 9],
-            ['nom' => 'Autres', 'icone' => '📦', 'ordre' => 10],
+            ['nom' => 'Alimentation & Boissons', 'icone' => 'fa-utensils', 'ordre' => 1],
+            ['nom' => 'Électronique & High-Tech', 'icone' => 'fa-microchip', 'ordre' => 2],
+            ['nom' => 'Mode & Vêtements', 'icone' => 'fa-shirt', 'ordre' => 3],
+            ['nom' => 'Maison & Décoration', 'icone' => 'fa-house', 'ordre' => 4],
+            ['nom' => 'Santé & Beauté', 'icone' => 'fa-heart-pulse', 'ordre' => 5],
+            ['nom' => 'Matériaux & BTP', 'icone' => 'fa-helmet-safety', 'ordre' => 6],
+            ['nom' => 'Bureau & Fournitures', 'icone' => 'fa-briefcase', 'ordre' => 7],
+            ['nom' => 'Agriculture', 'icone' => 'fa-seedling', 'ordre' => 8],
+            ['nom' => 'Services', 'icone' => 'fa-wrench', 'ordre' => 9],
+            ['nom' => 'Autres', 'icone' => 'fa-box', 'ordre' => 10],
         ];
 
         foreach ($categories as $cat) {
             Categorie::create($cat);
         }
 
-        $this->command->info('✅ Base de données initialisée avec succès !');
-        $this->command->info('   👑 Admin: admin@bmjetransit.com / password');
-        $this->command->info('   📦 3 forfaits créés (Starter, Pro, Premium)');
-        $this->command->info('   📂 10 catégories créées');
+        $this->command->info('Base de donnees initialisee avec succes !');
+        $this->command->info('  Admin: admin@bmjetransit.com / password');
+        $this->command->info('  3 forfaits crees (Starter, Pro, Premium)');
+        $this->command->info('  10 categories creees');
     }
 }
