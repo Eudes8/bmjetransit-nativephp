@@ -19,7 +19,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath, gd
+          extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath, gd, fileinfo
           coverage: none
 
       - name: Setup Node.js
@@ -49,9 +49,10 @@ jobs:
         run: npm run build
 
       - name: Build NativePHP desktop app
-        run: php artisan native:build win
+        run: php artisan native:build win --no-interaction
         env:
           NATIVEPHP_BUILDING: true
+          CI: true
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -72,7 +73,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath, gd
+          extensions: sqlite3, pdo_sqlite, mbstring, xml, curl, zip, bcmath, gd, fileinfo
           coverage: none
 
       - name: Setup Node.js
@@ -100,9 +101,10 @@ jobs:
         run: npm run build
 
       - name: Build NativePHP desktop app
-        run: php artisan native:build linux
+        run: script -qec "php artisan native:build linux --no-interaction" /dev/null
         env:
           NATIVEPHP_BUILDING: true
+          CI: true
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
