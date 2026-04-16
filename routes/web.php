@@ -39,7 +39,7 @@ Route::get('/catalogue', [CatalogueController::class, 'index'])->name('catalogue
 Route::get('/catalogue/{produit}', [CatalogueController::class, 'show'])->name('catalogue.show');
 Route::get('/boutique/{entreprise}', [CatalogueController::class, 'entreprise'])->name('catalogue.entreprise');
 
-Route::get('/tracking/{numero}', [TrackingController::class, 'show'])->name('tracking');
+Route::get('/tracking/{numero?}', [TrackingController::class, 'show'])->name('tracking');
 Route::post('/tracking', [TrackingController::class, 'rechercher'])->name('tracking.rechercher');
 
 // -- Auth --

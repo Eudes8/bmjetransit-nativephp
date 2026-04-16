@@ -31,7 +31,7 @@
                     </a>
                     <div class="hidden md:flex ml-10 space-x-4">
                         <a href="{{ route('catalogue') }}" class="text-gray-600 hover:text-bmje-600 px-3 py-2 text-sm font-medium">Catalogue</a>
-                        <a href="{{ route('tracking', ['numero' => '']) }}" class="text-gray-600 hover:text-bmje-600 px-3 py-2 text-sm font-medium">Suivi livraison</a>
+                        <a href="{{ url('/tracking') }}" class="text-gray-600 hover:text-bmje-600 px-3 py-2 text-sm font-medium">Suivi livraison</a>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
