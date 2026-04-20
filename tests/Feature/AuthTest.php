@@ -34,7 +34,7 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertRedirect('/catalogue');
-        $this->assertDatabaseHas('users', ['email' => 'jean@test.com', 'role' => 'client']);
+        $this->assertDatabaseHas('users', ['email' => 'jean@test.com', 'type' => 'client']);
     }
 
     public function test_connexion_valide(): void

@@ -1,17 +1,15 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Marketplace - BMJeTransit'); ?>
 
-@section('title', 'Marketplace - BMJeTransit')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <main class="pb-24">
     <!-- Search Bar Section -->
     <div class="px-6 py-4 bg-transparent max-w-5xl mx-auto w-full">
-        <form action="{{ route('catalogue') }}" method="GET" class="flex flex-col w-full">
+        <form action="<?php echo e(route('catalogue')); ?>" method="GET" class="flex flex-col w-full">
             <div class="flex w-full items-stretch rounded-lg h-12 bg-white shadow-sm border border-slate-100 focus-within:border-primary transition-colors overflow-hidden">
                 <div class="text-slate-400 flex items-center justify-center pl-4">
                     <span class="material-symbols-outlined">search</span>
                 </div>
-                <input name="recherche" value="{{ request('recherche') }}" class="flex w-full border-none bg-transparent focus:ring-0 text-slate-900 placeholder:text-slate-400 px-4 text-sm font-medium" placeholder="Rechercher un produit..."/>
+                <input name="recherche" value="<?php echo e(request('recherche')); ?>" class="flex w-full border-none bg-transparent focus:ring-0 text-slate-900 placeholder:text-slate-400 px-4 text-sm font-medium" placeholder="Rechercher un produit..."/>
             </div>
         </form>
     </div>
@@ -34,14 +32,14 @@
             <h3 class="text-slate-900 text-lg font-bold tracking-tight">Catégories</h3>
         </div>
         <div class="flex gap-3 px-6 overflow-x-auto no-scrollbar pb-2">
-            <a href="{{ route('catalogue') }}" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg {{ !request('categorie') ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600' }} px-5 active:scale-95 transition-all">
+            <a href="<?php echo e(route('catalogue')); ?>" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg <?php echo e(!request('categorie') ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600'); ?> px-5 active:scale-95 transition-all">
                 <p class="text-sm font-bold tracking-wide">Tout</p>
             </a>
-            @foreach($categories as $cat)
-                <a href="{{ route('catalogue', ['categorie' => $cat->id]) }}" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg {{ request('categorie') == $cat->id ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600' }} px-5 active:scale-95 transition-all">
-                    <p class="text-sm font-semibold">{{ $cat->nom }}</p>
+            <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <a href="<?php echo e(route('catalogue', ['categorie' => $cat->id])); ?>" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg <?php echo e(request('categorie') == $cat->id ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600'); ?> px-5 active:scale-95 transition-all">
+                    <p class="text-sm font-semibold"><?php echo e($cat->nom); ?></p>
                 </a>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
 
@@ -49,65 +47,67 @@
     <div class="max-w-5xl mx-auto w-full">
         <div class="flex items-center justify-between px-6 pt-8 pb-4">
             <h3 class="text-slate-900 text-lg font-bold tracking-tight">
-                {{ request('recherche') ? 'Résultats pour "' . request('recherche') . '"' : (request('categorie') ? 'Produits de la catégorie' : 'Produits vedettes') }}
+                <?php echo e(request('recherche') ? 'Résultats pour "' . request('recherche') . '"' : (request('categorie') ? 'Produits de la catégorie' : 'Produits vedettes')); ?>
+
             </h3>
             <span class="text-primary text-sm font-bold hover:underline cursor-pointer">Voir tout</span>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 px-6">
-            @forelse($produits as $produit)
-                <a href="{{ route('catalogue.show', $produit) }}" class="flex flex-col bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden active:scale-95 transition-transform duration-150">
+            <?php $__empty_1 = true; $__currentLoopData = $produits; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $produit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <a href="<?php echo e(route('catalogue.show', $produit)); ?>" class="flex flex-col bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden active:scale-95 transition-transform duration-150">
                     <div class="aspect-square w-full bg-slate-50 relative">
-                        @if($produit->images && count($produit->images) > 0)
-                            <img src="{{ $produit->images[0] }}" alt="{{ $produit->nom }}" class="h-full w-full object-cover">
-                        @else
+                        <?php if($produit->images && count($produit->images) > 0): ?>
+                            <img src="<?php echo e($produit->images[0]); ?>" alt="<?php echo e($produit->nom); ?>" class="h-full w-full object-cover">
+                        <?php else: ?>
                             <div class="h-full w-full flex items-center justify-center text-slate-200">
                                 <span class="material-symbols-outlined text-4xl">image</span>
                             </div>
-                        @endif
-                        @if($produit->en_promo)
+                        <?php endif; ?>
+                        <?php if($produit->en_promo): ?>
                             <span class="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">PROMO</span>
-                        @endif
+                        <?php endif; ?>
                     </div>
                     <div class="p-3">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 truncate">{{ $produit->entreprise->raison_sociale }}</p>
-                        <h4 class="text-[13px] font-bold text-slate-800 truncate">{{ $produit->nom }}</h4>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 truncate"><?php echo e($produit->entreprise->raison_sociale); ?></p>
+                        <h4 class="text-[13px] font-bold text-slate-800 truncate"><?php echo e($produit->nom); ?></h4>
                         <div class="flex items-center gap-1 mt-1">
                             <span class="material-symbols-outlined text-amber-400 text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
                             <span class="text-[11px] font-bold text-slate-600">4.8</span>
                         </div>
-                        <p class="text-primary font-extrabold text-[15px] mt-2">{{ number_format($produit->prix_actuel, 0, ',', ' ') }} XOF</p>
+                        <p class="text-primary font-extrabold text-[15px] mt-2"><?php echo e(number_format($produit->prix_actuel, 0, ',', ' ')); ?> XOF</p>
                     </div>
                 </a>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="col-span-full py-20 text-center text-slate-400">
                     <span class="material-symbols-outlined text-5xl mb-4">search_off</span>
                     <p class="text-lg font-bold">Aucun produit trouvé</p>
                     <p class="text-sm">Essayez une autre recherche ou parcourez les catégories.</p>
                 </div>
-            @endforelse
+            <?php endif; ?>
         </div>
 
         <div class="px-6 mt-8">
-            {{ $produits->links() }}
+            <?php echo e($produits->links()); ?>
+
         </div>
     </div>
 </main>
 
-{{-- BottomNavBar pour le client --}}
+
 <nav class="fixed bottom-0 w-full z-50 rounded-t-2xl border-t border-slate-100 bg-white/90 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.03)] flex justify-around items-center h-20 pb-safe px-4">
-    <a class="flex flex-col items-center justify-center text-primary scale-105 transition-transform" href="{{ route('catalogue') }}">
+    <a class="flex flex-col items-center justify-center text-primary scale-105 transition-transform" href="<?php echo e(route('catalogue')); ?>">
         <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
         <p class="font-label text-[11px] font-medium tracking-wide uppercase mt-1">Marketplace</p>
     </a>
-    <a class="flex flex-col items-center justify-center text-slate-400 opacity-80 hover:text-primary transition-colors" href="{{ route('tracking') }}">
+    <a class="flex flex-col items-center justify-center text-slate-400 opacity-80 hover:text-primary transition-colors" href="<?php echo e(route('tracking')); ?>">
         <span class="material-symbols-outlined">local_shipping</span>
         <p class="font-label text-[11px] font-medium tracking-wide uppercase mt-1">Suivi</p>
     </a>
-    <a class="flex flex-col items-center justify-center text-slate-400 opacity-80 hover:text-primary transition-colors" href="{{ route('client.commandes') }}">
+    <a class="flex flex-col items-center justify-center text-slate-400 opacity-80 hover:text-primary transition-colors" href="<?php echo e(route('client.commandes')); ?>">
         <span class="material-symbols-outlined">receipt</span>
         <p class="font-label text-[11px] font-medium tracking-wide uppercase mt-1">Commandes</p>
     </a>
-    <a class="flex flex-col items-center justify-center text-slate-400 opacity-80 hover:text-primary transition-colors" href="{{ route('client.profil') }}">
+    <a class="flex flex-col items-center justify-center text-slate-400 opacity-80 hover:text-primary transition-colors" href="<?php echo e(route('client.profil')); ?>">
         <span class="material-symbols-outlined">person</span>
         <p class="font-label text-[11px] font-medium tracking-wide uppercase mt-1">Compte</p>
     </a>
@@ -122,4 +122,6 @@
         scrollbar-width: none;
     }
 </style>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /app/resources/views/catalogue/index.blade.php ENDPATH**/ ?>

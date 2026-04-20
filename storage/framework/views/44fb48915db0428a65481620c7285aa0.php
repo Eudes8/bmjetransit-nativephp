@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'BMJeTransit') - Marketplace & Livraison</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo $__env->yieldContent('title', 'BMJeTransit'); ?> - Marketplace & Livraison</title>
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,64 +20,64 @@
         [v-cloak] { display: none !important; }
     </style>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
 
-    @stack('styles')
+    <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans antialiased">
-    {{-- TopAppBar --}}
+
     <header class="fixed top-0 w-full z-50 bg-slate-50/80 backdrop-blur-xl shadow-sm border-b border-slate-200/50">
         <div class="flex justify-between items-center w-full px-6 h-16 max-w-7xl mx-auto">
             <div class="flex items-center gap-4">
                 <button class="text-primary active:scale-95 transition-transform duration-150 md:hidden">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
-                <a href="{{ route('home') }}" class="flex items-center gap-2">
+                <a href="<?php echo e(route('home')); ?>" class="flex items-center gap-2">
                     <h1 class="text-primary text-xl font-extrabold tracking-tighter">BMJeTransit</h1>
                 </a>
                 <nav class="hidden md:flex items-center ml-8 gap-1">
-                    <a href="{{ route('catalogue') }}" class="px-4 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('catalogue*') ? 'text-primary bg-blue-50' : 'text-slate-600 hover:bg-slate-100' }}">Catalogue</a>
-                    <a href="{{ route('tracking') }}" class="px-4 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('tracking*') ? 'text-primary bg-blue-50' : 'text-slate-600 hover:bg-slate-100' }}">Suivi</a>
+                    <a href="<?php echo e(route('catalogue')); ?>" class="px-4 py-2 rounded-lg text-sm font-semibold <?php echo e(request()->routeIs('catalogue*') ? 'text-primary bg-blue-50' : 'text-slate-600 hover:bg-slate-100'); ?>">Catalogue</a>
+                    <a href="<?php echo e(route('tracking')); ?>" class="px-4 py-2 rounded-lg text-sm font-semibold <?php echo e(request()->routeIs('tracking*') ? 'text-primary bg-blue-50' : 'text-slate-600 hover:bg-slate-100'); ?>">Suivi</a>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
-                @auth
+                <?php if(auth()->guard()->check()): ?>
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:flex flex-col items-end">
-                            <span class="text-xs font-bold text-slate-900 leading-tight">{{ auth()->user()->nom_complet }}</span>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ auth()->user()->type }}</span>
+                            <span class="text-xs font-bold text-slate-900 leading-tight"><?php echo e(auth()->user()->nom_complet); ?></span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><?php echo e(auth()->user()->type); ?></span>
                         </div>
                         <div class="relative group">
                             <button class="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden active:scale-95 transition-transform">
-                                @if(auth()->user()->avatar)
-                                    <img src="{{ auth()->user()->avatar }}" alt="Profile" class="w-full h-full object-cover">
-                                @else
+                                <?php if(auth()->user()->avatar): ?>
+                                    <img src="<?php echo e(auth()->user()->avatar); ?>" alt="Profile" class="w-full h-full object-cover">
+                                <?php else: ?>
                                     <div class="w-full h-full bg-blue-100 flex items-center justify-center text-primary">
                                         <span class="material-symbols-outlined">person</span>
                                     </div>
-                                @endif
+                                <?php endif; ?>
                             </button>
-                            {{-- Dropdown simple --}}
+
                             <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                                @if(auth()->user()->estAdmin())
-                                    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                <?php if(auth()->user()->estAdmin()): ?>
+                                    <a href="<?php echo e(route('admin.dashboard')); ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                         <span class="material-symbols-outlined text-lg">dashboard</span> Dashboard Admin
                                     </a>
-                                @elseif(auth()->user()->estEntreprise())
-                                    <a href="{{ route('espace.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                <?php elseif(auth()->user()->estEntreprise()): ?>
+                                    <a href="<?php echo e(route('espace.dashboard')); ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                         <span class="material-symbols-outlined text-lg">dashboard</span> Mon Espace
                                     </a>
-                                @elseif(auth()->user()->estLivreur())
-                                    <a href="{{ route('livreur.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                <?php elseif(auth()->user()->estLivreur()): ?>
+                                    <a href="<?php echo e(route('livreur.dashboard')); ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                         <span class="material-symbols-outlined text-lg">dashboard</span> Dashboard Livreur
                                     </a>
-                                @endif
-                                <a href="{{ route('client.commandes') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                <?php endif; ?>
+                                <a href="<?php echo e(route('client.commandes')); ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                                     <span class="material-symbols-outlined text-lg">shopping_bag</span> Mes Commandes
                                 </a>
                                 <hr class="my-1 border-slate-100">
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
+                                <form method="POST" action="<?php echo e(route('logout')); ?>">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left">
                                         <span class="material-symbols-outlined text-lg">logout</span> Déconnexion
                                     </button>
@@ -85,42 +85,42 @@
                             </div>
                         </div>
                     </div>
-                @else
+                <?php else: ?>
                     <div class="flex items-center gap-2">
-                        <a href="{{ route('login') }}" class="text-slate-600 px-4 py-2 text-sm font-bold hover:text-primary transition-colors">Connexion</a>
-                        <a href="{{ route('register') }}" class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:opacity-90 active:scale-95 transition-all">Inscription</a>
+                        <a href="<?php echo e(route('login')); ?>" class="text-slate-600 px-4 py-2 text-sm font-bold hover:text-primary transition-colors">Connexion</a>
+                        <a href="<?php echo e(route('register')); ?>" class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:opacity-90 active:scale-95 transition-all">Inscription</a>
                     </div>
-                @endauth
+                <?php endif; ?>
             </div>
         </div>
     </header>
 
-    {{-- Main Content --}}
+
     <main class="pt-16 flex-1 flex flex-col">
-        {{-- Flash messages --}}
-        @if(session('success'))
+
+        <?php if(session('success')): ?>
             <div class="max-w-7xl mx-auto w-full px-6 mt-4">
                 <div class="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-xl flex items-center gap-3">
                     <span class="material-symbols-outlined">check_circle</span>
-                    <span class="text-sm font-semibold">{{ session('success') }}</span>
+                    <span class="text-sm font-semibold"><?php echo e(session('success')); ?></span>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @if(session('error'))
+        <?php if(session('error')): ?>
             <div class="max-w-7xl mx-auto w-full px-6 mt-4">
                 <div class="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3">
                     <span class="material-symbols-outlined">error</span>
-                    <span class="text-sm font-semibold">{{ session('error') }}</span>
+                    <span class="text-sm font-semibold"><?php echo e(session('error')); ?></span>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @yield('content')
+        <?php echo $__env->yieldContent('content'); ?>
     </main>
 
-    {{-- Footer (optionnel pour les dashboards mobiles, mais gardé pour le web) --}}
-    @if(!request()->is('espace*') && !request()->is('admin*') && !request()->is('livreur*'))
+
+    <?php if(!request()->is('espace*') && !request()->is('admin*') && !request()->is('livreur*')): ?>
     <footer class="bg-white border-t border-slate-100 mt-auto">
         <div class="max-w-7xl mx-auto px-6 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
@@ -134,8 +134,8 @@
                 <div>
                     <h4 class="text-slate-900 font-bold text-sm uppercase tracking-widest mb-4">Entreprises</h4>
                     <ul class="space-y-2 text-sm font-medium text-slate-500">
-                        <li><a href="{{ route('register.entreprise') }}" class="hover:text-primary transition-colors">Devenir partenaire</a></li>
-                        <li><a href="{{ route('login') }}" class="hover:text-primary transition-colors">Portail Marchand</a></li>
+                        <li><a href="<?php echo e(route('register.entreprise')); ?>" class="hover:text-primary transition-colors">Devenir partenaire</a></li>
+                        <li><a href="<?php echo e(route('login')); ?>" class="hover:text-primary transition-colors">Portail Marchand</a></li>
                     </ul>
                 </div>
                 <div>
@@ -147,12 +147,13 @@
                 </div>
             </div>
             <div class="mt-12 pt-8 border-t border-slate-50 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-                © {{ date('Y') }} BMJeTransit. Tous droits réservés.
+                © <?php echo e(date('Y')); ?> BMJeTransit. Tous droits réservés.
             </div>
         </div>
     </footer>
-    @endif
+    <?php endif; ?>
 
-    @stack('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
+<?php /**PATH /app/resources/views/layouts/app.blade.php ENDPATH**/ ?>
