@@ -15,6 +15,7 @@ use App\Http\Controllers\Entreprise\DashboardController as EntrepriseDashboard;
 use App\Http\Controllers\Entreprise\ProduitController;
 use App\Http\Controllers\Entreprise\CommandeController as EntrepriseCommande;
 use App\Http\Controllers\Entreprise\FinanceController as EntrepriseFinance;
+use App\Http\Controllers\Livreur\DashboardController as LivreurDashboard;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,10 +23,11 @@ use Illuminate\Support\Facades\Route;
 | Routes Web - BMJeTransit
 |--------------------------------------------------------------------------
 |
-| 3 espaces :
+| 4 espaces :
 | /          -> Vitrine publique + catalogue (clients)
 | /admin     -> Back-office admin BMJE (NativePhP desktop)
 | /espace    -> Espace entreprise partenaire
+| /livreur   -> Espace livreur
 |
 */
 
@@ -146,4 +148,10 @@ Route::middleware(['auth', 'role:entreprise'])->prefix('espace')->name('espace.'
     Route::get('/profil', function () {
         return view('entreprise.profil');
     })->name('profil');
+});
+
+// -- Espace Livreur --
+
+Route::middleware(['auth', 'role:livreur'])->prefix('livreur')->name('livreur.')->group(function () {
+    Route::get('/', [LivreurDashboard::class, 'index'])->name('dashboard');
 });

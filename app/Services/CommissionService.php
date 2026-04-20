@@ -8,6 +8,18 @@ use App\Models\PortefeuilleEntreprise;
 class CommissionService
 {
     /**
+     * Pour compatibilité avec les tests
+     */
+    public function calculer(float $montant, float $taux = 10): array
+    {
+        $commission = round($montant * $taux / 100);
+        return [
+            'commission' => $commission,
+            'montant_entreprise' => $montant - $commission,
+        ];
+    }
+
+    /**
      * Calculer la commission BMJE sur une commande
      */
     public function calculerCommission(Commande $commande): array

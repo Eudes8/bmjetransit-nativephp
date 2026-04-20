@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('entreprises', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('forfait_id')->nullable();
             $table->string('raison_sociale');
             $table->string('sigle')->nullable();
             $table->text('description')->nullable();
@@ -20,7 +21,7 @@ return new class extends Migration
             $table->string('secteur_activite')->nullable();
             $table->string('adresse')->nullable();
             $table->string('ville')->nullable();
-            $table->string('pays')->default('Côte d\'Ivoire');
+            $table->string('pays')->default('Cote dIvoire');
             $table->string('telephone')->nullable();
             $table->string('email')->nullable();
             $table->enum('statut', ['en_attente', 'approuvee', 'suspendue', 'rejetee'])->default('en_attente');

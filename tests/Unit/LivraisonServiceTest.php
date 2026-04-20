@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\LivraisonService;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class LivraisonServiceTest extends TestCase
 {
